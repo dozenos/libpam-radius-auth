@@ -1,4 +1,5 @@
 // Copyright (C) 2020-2021 VyOS maintainers and contributors
+// Modifications Copyright DozenOS Contributors. See git history for details.
 //
 // This program is free software; you can redistribute it and/or modify
 // in order to easy exprort images built to "external" world
