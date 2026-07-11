@@ -1,0 +1,19 @@
+#!/usr/bin/make -f
+
+CFLAGS = $(shell dpkg-buildflags --get CFLAGS)
+# -Wnostrict-aliasing for md5.c
+ifneq (,$(findstring noopt,$(DEB_BUILD_OPTIONS)))
+	CFLAGS += -O0
+else
+	CFLAGS += -O2
+endif
+PAM_CONF_FILE=/etc/pam_radius_auth.conf
+CFLAGS+=-g3 -Wno-strict-aliasing -Wno-format-truncation -DCONF_FILE=\"${PAM_CONF_FILE}\"
+
+ifeq ($(DEB_HOST_GNU_CPU),(hppa|m68k|mips|powerpc|s390|sparc|sparc64|sheb))
+	CFLAGS += -DHIGHFIRST
+endif
+export CFLAGS
+
+%:
+	dh $@ --with autoreconf

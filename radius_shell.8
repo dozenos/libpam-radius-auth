@@ -1,0 +1,96 @@
+.TH radius_shell 8
+.\" Copyright 2018 Cumulus Networks, Inc.  All rights reserved.
+.SH NAME
+radius_shell - front end shell for radius users
+.SH SYNOPSIS
+.B /sbin/radius_shell
+is  RADIUS client front end shell that will ensure that the euid, and the uid is set
+to the auid (the accounting uid).
+.SH DESCRIPTION
+This shell front-end needed because at login, it's
+not possible to determine if a user is privileged up front, because
+the RADIUS protocol combines authentication and authorization in a single
+transaction.
+.P
+That means that all RADIUS users login as the same base mapped user and therefore
+the same UID, although the auid will be set differently.
+.P
+The
+.B radius_shell
+is installed with setcap permissions that allow it to set the uid.
+It is set as the login shell for the radius users via the
+.I libnss-mapuser
+package.
+.P
+For security, the uid of the process is only changed if the auid is set,
+and is 1000 or larger (this is the normal minimum uid for non-privileged
+users via
+.I adduser
+and
+.IR useradd .
+The value is hardcoded in the source, it is not read from the
+.I adduser.conf
+configuration file.
+.P
+Whether the uid is changed or not, a login shell is exec'ed.
+At this time, the login shell is only
+.BR /bin/bash ,
+although the other shells listed in
+.I /etc/shells
+may be allowed in the future.
+.SH NOTE
+If a site wants to allow local fallback authentication of a user when 
+none of the RADIUS servers respond, a privileged user account with the
+same name as a RADIUS privileged user should be added as a local account,
+and the local account must have the same uid as the mapping privileged
+user, and the shell must be this shell.
+.P
+For example, if the
+.B radius_priv_user
+account in
+.I /etc/passwd
+is:
+.in +3
+.B "radius_priv_user:x:1002:1001::/home/radius_priv_user:/sbin/radius_shell"
+.P
+then the command to add a local privileged user account named
+.B olsonadmin
+would be
+.in +3
+.B "sudo useradd -u 1002 -g 1001 -o -s /sbin/radius_shell olsonadmin"
+.P
+Additionally, if you want the user to be able to run
+.I sudo
+and
+.IR nclu ( net )
+commands, you will also need to run the commands
+.in +3
+.B "sudo adduser olsonadmin netedit"
+.br
+.B "sudo adduser olsonadmin sudo"
+.br
+.B "sudo systemctl restart netd"
+.P
+Finally, edit the password file to move the local user prior to the 
+.B radius_priv_user
+line in the passwd file, using the command
+.in +3
+.B "sudo vipw"
+.in -3
+Set the local password for the user
+.in +3
+.B "sudo passwd olsonadmin"
+.in -3
+.P
+These extra steps are needed to the limitations of mapping RADIUS users, and the
+limitations of the RADIUS protocol.
+.SH "SEE ALSO"
+.BR setcap (8),
+.BR pam_radius_auth (8),
+.BR adduser (8),
+.BR useradd (8),
+.BR vipw "(8), and"
+.BR nss_mapuser (5)
+.SH FILES
+.SH AUTHOR
+Dave Olson <olson@cumulusnetworks.com>
